@@ -1,8 +1,8 @@
 PYTHON ?= python
 
-.PHONY: all results docs slides test
+.PHONY: all results docs slides method test
 
-all: results docs slides
+all: results docs slides method
 
 results:
 	$(PYTHON) src/coupling_demo.py
@@ -13,6 +13,9 @@ docs:
 
 slides:
 	$(PYTHON) src/slide_figures.py
+
+method:
+	$(PYTHON) src/method_figures.py
 
 test:
 	$(PYTHON) -m pytest -q

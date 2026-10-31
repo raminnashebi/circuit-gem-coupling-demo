@@ -82,5 +82,7 @@ def test_outputs_exist():
         assert (ROOT / "results" / "figures" / f"{name}.png").stat().st_size > 0
     for name in ("step1_limits", "step2_window", "step4_in_time", "step6_measure"):
         assert (ROOT / "results" / "slides" / f"{name}.png").stat().st_size > 0
+    for name in ("d1_network", "d2_coupling", "d3_loop"):
+        assert (ROOT / "results" / "method" / f"{name}.png").stat().st_size > 0
     for name in ("report.html", "mathematics.html"):
         assert (ROOT / "docs" / name).stat().st_size > 0

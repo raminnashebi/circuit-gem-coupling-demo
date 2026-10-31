@@ -18,6 +18,11 @@ flux it can really deliver, given the cofactors (ATP, NADPH) its own maintenance
 
 ## The method in six steps
 
+![Steps 1 to 3: the circuit enters the network as reactions and bounds](results/method/d1_network.png)
+![Step 4: the two models exchange a few variables at every time step](results/method/d2_coupling.png)
+![Steps 5 and 6: design, then measure, in a loop with the lab](results/method/d3_loop.png)
+
+
 **Level 1, stoichiometric coupling**
 1. Add the circuit's effector reaction to the network, tied to a transgene by a gene rule, and bound its flux
    by the enzyme level.
@@ -67,11 +72,13 @@ circuit-gem-coupling-demo/
 │   ├── coupling_demo.py    the whole demonstration: network, circuit, data, coupling, designs
 │   ├── build_report.py     builds docs/report.html
 │   ├── build_math.py       builds docs/mathematics.html
-│   └── slide_figures.py    one-message figures for slides
+│   ├── slide_figures.py    one-message result figures
+│   └── method_figures.py   the three method diagrams
 ├── results/
 │   ├── results.json        every number quoted in the reports
 │   ├── figures/            the five report figures
-│   └── slides/             four one-message slide figures
+│   ├── slides/             four one-message result figures
+│   └── method/             three method diagrams (PNG and SVG)
 ├── docs/
 │   ├── report.html         the method, results, checks and limits
 │   └── mathematics.html    the formulation and numerical verification
