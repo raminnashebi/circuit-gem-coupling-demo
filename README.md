@@ -55,7 +55,7 @@ Python 3.11.
 python -m venv .venv
 source .venv/bin/activate
 pip install -r requirements.txt
-make all    # results/results.json, results/figures/ and both reports (about 15 seconds)
+make all    # results/results.json, figures, slide figures and both reports (about 20 seconds)
 make test   # checks of every headline number
 ```
 
@@ -66,10 +66,12 @@ circuit-gem-coupling-demo/
 ├── src/
 │   ├── coupling_demo.py    the whole demonstration: network, circuit, data, coupling, designs
 │   ├── build_report.py     builds docs/report.html
-│   └── build_math.py       builds docs/mathematics.html
+│   ├── build_math.py       builds docs/mathematics.html
+│   └── slide_figures.py    one-message figures for slides
 ├── results/
 │   ├── results.json        every number quoted in the reports
-│   └── figures/            the five figures
+│   ├── figures/            the five report figures
+│   └── slides/             four one-message slide figures
 ├── docs/
 │   ├── report.html         the method, results, checks and limits
 │   └── mathematics.html    the formulation and numerical verification

@@ -65,8 +65,22 @@ def test_prediction_is_robust_across_fitted_designs():
     assert 0.43 <= low <= high <= 0.45
 
 
+def test_window_edge_matches_its_closed_form():
+    assert C["window_edge_grid_vs_formula_max_abs_diff"] < 0.01  # within one grid step
+
+
+def test_slide_series_agree_with_the_tables():
+    s = R["level1_capacity_series"]
+    for key in ("NADPH", "ATP"):
+        for i, age in ((0, "0"), (30, "60"), (60, "120")):
+            assert s[key][i] == pytest.approx(R["level1_capacity"][key][age]["ceiling"], abs=1e-6)
+    assert len(R["identifiability"]["accepted_log10"]["a_E"]) == R["identifiability"]["n_accepted"]
+
+
 def test_outputs_exist():
     for name in ("fig1_capacity", "fig2_window", "fig3_data", "fig4_dynamics", "fig5_designs"):
         assert (ROOT / "results" / "figures" / f"{name}.png").stat().st_size > 0
+    for name in ("step1_limits", "step2_window", "step4_in_time", "step6_measure"):
+        assert (ROOT / "results" / "slides" / f"{name}.png").stat().st_size > 0
     for name in ("report.html", "mathematics.html"):
         assert (ROOT / "docs" / name).stat().st_size > 0

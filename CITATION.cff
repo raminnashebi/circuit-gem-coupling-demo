@@ -4,7 +4,7 @@ title: "Coupling a gene circuit model to a metabolic network model: a toy demons
 authors:
   - family-names: Nashebi
     given-names: Ramin
-version: 0.1.0
+version: 0.2.0
 date-released: 2026-10-31
 license: MIT
 repository-code: "https://github.com/raminnashebi/circuit-gem-coupling-demo"

@@ -445,8 +445,17 @@ def window_closing_age():
 
 
 close_age = window_closing_age()
+upper_safe = Vw - (RESERVE_MIN - 1) * BASE["m_nadph"]  # largest detox flux that keeps the reserve
+grid_edge = np.array([k_w[cat[:, j] == 1].max() if (cat[:, j] == 1).any() else np.nan for j in range(len(ages_w))])
+ok = np.isfinite(grid_edge)
+RESULTS["checks"]["window_edge_grid_vs_formula_max_abs_diff"] = float(np.abs(grid_edge[ok] - upper_safe[ok]).max())
 RESULTS["level1_window"] = {"need_flux": NEED, "reserve_min_fold": RESERVE_MIN, "closing_age_days": close_age,
-                            "ceiling_at_age": dict(zip([int(a) for a in ages_w[::6]], [float(x) for x in Vw[::6]]))}
+                            "ceiling_at_age": dict(zip([int(a) for a in ages_w[::6]], [float(x) for x in Vw[::6]])),
+                            "series": {"age_d": [float(a) for a in ages_w], "ceiling": [float(x) for x in Vw],
+                                       "upper_safe": [float(x) for x in upper_safe]}}
+RESULTS["level1_capacity_series"] = {"age_d": [float(a) for a in ages_w],
+                                     "NADPH": [float(marginal_values(m, caps_at(a))[0]) for a in ages_w],
+                                     "ATP": [float(marginal_values(mA, caps_at(a))[0]) for a in ages_w]}
 fig, ax = plt.subplots(figsize=(6.6, 4.0))
 cmap = ListedColormap([GREY_L, TEAL_L, RED_L])
 ax.pcolormesh(ages_w, k_w, cat, cmap=cmap, shading="nearest", vmin=0, vmax=2)
@@ -801,6 +810,9 @@ RESULTS["identifiability"] = {
     "corr_log_aE_log_kcat_accepted": float(np.corrcoef(lg["a_E"][acc], lg["kcat"][acc])[0, 1]),
     "corr_log_aE_log_kcat_with_enzyme_amount": float(np.corrcoef(lg["a_E"][acc2], lg["kcat"][acc2])[0, 1]),
     "contraction_toxin_data": contraction, "contraction_plus_enzyme_amount": contraction2,
+    "log10_ranges": {k: [float(LOG_RANGES[k][0]), float(LOG_RANGES[k][1])] for k in ("a_E", "kcat")},
+    "accepted_log10": {k: [float(x) for x in lg[k][acc]] for k in ("a_E", "kcat")},
+    "accepted_with_enzyme_amount_log10": {k: [float(x) for x in lg[k][acc2]] for k in ("a_E", "kcat")},
     "true_log10": {k: float(np.log10(v)) for k, v in TRUE_THETA.items()},
     "protected_fraction_of_accepted_designs_baseline": [float(x) for x in np.percentile(prot["baseline (62 d)"][0][acc], [5, 50, 95])],
     "robust_protected_fraction_of_accepted_designs": [float(x) for x in np.percentile(robust[acc], [5, 50, 95])],
