@@ -81,7 +81,7 @@ def hill(u, K):
 
 
 def sim_cf(a_E, k, K_X, h_E, tg=tG):
-    """Coupled run written only from the equations of sections 5 and 6 (closed form ceiling, Euler)."""
+    """Coupled run written only from the equations of sections 5 and 6 (closed form network capacity, Euler)."""
     X, Rr, E = L / kc, 0.0, 0.0
     per_day, n_steps = int(round(24 / dt)), int((Texp + Tmat) / dt)
     Xd, Ed = [], []
@@ -112,7 +112,7 @@ def check(label, value, tol, shown, note=""):
     CHECKS.append((label, shown, value <= tol, note))
 
 
-# (1) closed form ceiling against the linear program, both effectors
+# (1) closed form network capacity against the linear program, both effectors
 worst, nfeas = 0.0, 0
 for eff in ("NADPH", "ATP"):
     for a in range(0, 121, 5):
@@ -121,7 +121,7 @@ for eff in ("NADPH", "ATP"):
             assert np.isnan(x) == np.isnan(y), ("feasibility mismatch", eff, a, c, x, y)
             if not np.isnan(x):
                 worst, nfeas = max(worst, abs(x - y)), nfeas + 1
-check("Ceiling closed forms against the linear program (both effectors, ages 0 to 120 d, costs 0 to 1.2)",
+check("Network capacity closed forms against the linear program (both effectors, ages 0 to 120 d, costs 0 to 1.2)",
       worst, 1e-9, f"largest difference {worst:.1e} over {nfeas} feasible cases; feasibility agrees in all cases")
 cmax_cf = 2 * Hcap(0) - mA - mN / 6
 check("Largest feasible expression cost, closed form against the demo", abs(cmax_cf - R["checks"]["max_expression_cost_feasible"]), 1e-9,
@@ -147,7 +147,7 @@ di = np.round(age_s[daily] + 6).astype(int)
 rel = np.max(np.abs(Xs[di] - X_s[daily]) / X_s[daily])
 Xneg = sim_cf(aE, 1.01 * kcat, KX, hE)[0]
 rel_neg = np.max(np.abs(Xneg[di] - X_s[daily]) / X_s[daily])
-check("Coupled run re-implemented from the equations (closed form ceiling, Euler) against the demo's run (a linear program every step)",
+check("Coupled run re-implemented from the equations (closed form network capacity, Euler) against the demo's run (a linear program every step)",
       rel, 1e-4, f"largest relative difference in the toxin level {rel:.1e}; for comparison, changing kcat by 1% gives {rel_neg:.0e}")
 # (4) structural non identifiability along a_E x kcat = constant
 a2, a3 = 0.0137, 0.0531
@@ -184,16 +184,16 @@ check("Age at which the toxin loses control: formula against the simulation", ab
       f"formula {a_tox:.1f} d (network limit {a_nu:.1f} d, enzyme limit {a_kappa:.1f} d); simulation {sim_tox:.0f} d on daily records")
 check("Age at which the redox reserve falls below its threshold: formula against the simulation", abs(a_res - sim_res), 1.5,
       f"formula {a_res:.1f} d; simulation {sim_res:.0f} d on daily records")
-# (6) ceiling on protected life
-ceil_an = {}
+# (6) upper bound on protected life
+bound_an = {}
 for tg in (40.0, 62.0, 90.0):
-    ceil_an[tg] = np.mean([V_cf(a, 0.0, tg=tg) >= Theta for a in ages])
-ceil_dm = list(R["ensemble"]["metabolic_ceiling_protected_fraction"].values())
-check("Ceiling on protected life, formula against the demo (three G6PD scenarios)", max(abs(np.array(list(ceil_an.values())) - ceil_dm)), 1e-9,
-      "formula " + ", ".join(f"{v:.4f}" for v in ceil_an.values()) + "; demo " + ", ".join(f"{v:.4f}" for v in ceil_dm))
+    bound_an[tg] = np.mean([V_cf(a, 0.0, tg=tg) >= Theta for a in ages])
+bound_dm = list(R["ensemble"]["network_bound_protected_fraction"].values())
+check("Upper bound on protected life, formula against the demo (three G6PD scenarios)", max(abs(np.array(list(bound_an.values())) - bound_dm)), 1e-9,
+      "formula " + ", ".join(f"{v:.4f}" for v in bound_an.values()) + "; demo " + ", ".join(f"{v:.4f}" for v in bound_dm))
 best = list(R["ensemble"]["best_protected_fraction_per_scenario"].values())
-within = max(abs(np.array(best) - np.array(list(ceil_an.values())))) * 120
-check("Best design in 16,384 against the ceiling (in days of mature life)", within, 1.0 + 1e-9, f"largest gap {within:.1f} day")
+within = max(abs(np.array(best) - np.array(list(bound_an.values())))) * 120
+check("Best design in 16,384 against the upper bound (in days of mature life)", within, 1.0 + 1e-9, f"largest gap {within:.1f} day")
 # (7) expression stage fixed point
 def Ffix(X):
     Rs = aR / dR * hill(X, KX)
@@ -236,7 +236,7 @@ NUM = {
     "gTheta": f"{(Theta + mN) / 2:.2f}", "f_hk": f"{f_hk:.2f}", "phi": f"{p_ppp / f_hk:.3f}", "lacb": f"{lac:.2f}",
     "a_kappa": f"{a_kappa:.1f}", "a_tox": f"{a_tox:.1f}", "a_res": f"{a_res:.1f}", "sim_tox": f"{sim_tox:.0f}", "sim_res": f"{sim_res:.0f}",
     "Xstar": f"{Xstar:.2f}", "fp_err": f"{abs(Xstar - Xrelax) / Xstar:.0e}", "cstar": f"{cstar:.2f}", "E0": f"{E0:.3f}",
-    "ceil40": f"{ceil_an[40.0]:.3f}", "ceil62": f"{ceil_an[62.0]:.3f}", "ceil90": f"{ceil_an[90.0]:.3f}",
+    "bound40": f"{bound_an[40.0]:.3f}", "bound62": f"{bound_an[62.0]:.3f}", "bound90": f"{bound_an[90.0]:.3f}",
     "n_acc": f"{SD['n_accepted']}", "burden_lo": f"{SD['expression_burden_accepted_designs_5_50_95'][0]:.2f}",
     "burden_hi": f"{SD['expression_burden_accepted_designs_5_50_95'][2]:.2f}", "corr": f"{SD['corr_log_aE_log_kcat_accepted']:.2f}",
     "Nd": f"{R['ensemble']['n_designs']:,}", "g0half": f"{g0 / 2:g}",
@@ -267,7 +267,7 @@ BODY = r"""
 <ul>
 <li><strong>The network side is a linear program with an exact answer.</strong> The set of feasible effector fluxes is an interval $[0,V]$ (Lemma 1), so the cell delivers exactly $\min\{\kappa,V\}$ whatever the circuit asks for. For this network $V$ has a closed form (Proposition 1).</li>
 <li><strong>The circuit side is three ODEs</strong> that meet the network only through that flux map.</li>
-<li><strong>In the mature stage a quasi steady state formula</strong> predicts the toxin level, and it implies a ceiling on the protected life of <em>any</em> circuit design (Propositions 2 and 3).</li>
+<li><strong>In the mature stage a quasi steady state formula</strong> predicts the toxin level, and it implies an upper bound on the protected life of <em>any</em> circuit design (Propositions 2 and 3).</li>
 <li><strong>Expression strength and kcat are structurally non identifiable</strong> from toxin data, because they enter only as a product (Proposition 4).</li>
 <li><strong>Every formula is recomputed</strong> against a linear program or against the demo's own output in section 10.</li>
 </ul></div>
@@ -281,7 +281,7 @@ BODY = r"""
 <tr><td>$u_{\mathrm{glc}}$, $H(a)$</td><td>glucose uptake limit; effective uptake capacity $\min\{h(a),u_{\mathrm{glc}}\}$</td><td>$u_{\mathrm{glc}}={{uglc}}$</td></tr>
 <tr><td>$m_A$, $m_N$</td><td>maintenance: pump ATP; basal NADPH demand (glutathione reductase)</td><td>${{mA}}$; ${{mN}}$</td></tr>
 <tr><td>$c$, $b$</td><td>ATP drawn by expression; flux bound on the effector reaction set by the circuit</td><td>$c\ge 0$; $b\ge0$</td></tr>
-<tr><td>$V(a,c)$</td><td>ceiling: largest feasible effector flux</td><td>section 3</td></tr>
+<tr><td>$V(a,c)$</td><td>network capacity: largest feasible effector flux</td><td>section 3</td></tr>
 <tr><td>$E$, $R$, $X$</td><td>effector enzyme; regulator; toxin level</td><td>arbitrary units</td></tr>
 <tr><td>$\kappa(E,X)$</td><td>kinetic bound $k\,E\,X/(K_m+X)$</td><td>$K_m={{Km}}$</td></tr>
 <tr><td>$L$, $k_c$, $\bar X$</td><td>toxin load; clearance by other routes; target toxin level</td><td>${{L}}$; ${{kc}}$ h$^{-1}$; ${{Xbar}}$</td></tr>
@@ -328,25 +328,25 @@ $$ {{MATRIX}} $$
 $$\Pi(a,c,b)=\{\,v\in\mathbf R^{12}:\ Sv=0,\ \ \ell(a,c)\le v\le u(a,c,b)\,\},\qquad g(a)=g_0 2^{-a/\tau_G},\ \ h(a)=h_0 2^{-a/\tau_H}.$$ @@polytope
 
 <h2>3. Level 1: what the network can deliver</h2>
-<h3>3.1 Ceiling and delivered flux</h3>
-<p>The ceiling is the largest effector flux the cell can support while meeting maintenance, and the delivered flux is the largest one when the circuit offers at most $b$:</p>
-$$V(a,c)=\max\{\,v_{\mathrm{DET}}:\ v\in\Pi(a,c,\bar u)\,\},\qquad v^\star(a,c,b)=\max\{\,v_{\mathrm{DET}}:\ v\in\Pi(a,c,b)\,\}.$$ @@ceiling
+<h3>3.1 Network capacity and delivered flux</h3>
+<p>The network capacity is the largest effector flux the cell can support while meeting maintenance (the maximum that flux variability analysis returns for that reaction), and the delivered flux is the largest one when the circuit offers at most $b$:</p>
+$$V(a,c)=\max\{\,v_{\mathrm{DET}}:\ v\in\Pi(a,c,\bar u)\,\},\qquad v^\star(a,c,b)=\max\{\,v_{\mathrm{DET}}:\ v\in\Pi(a,c,b)\,\}.$$ @@capacity
 <div class="prop"><strong>Lemma 1 (interval).</strong> Let $c\le c_{\max}(a)$, so that $\Pi(a,c,\bar u)\ne\emptyset$. Then the set of feasible effector fluxes is the interval $[0,V(a,c)]$, and
 $$v^\star(a,c,b)=\min\{\,b,\ V(a,c)\,\}.$$ @@lemma
 If $c>c_{\max}(a)$ the problem is infeasible (an energy crisis).</div>
 <div class="proof"><em>Proof.</em> $\Pi(a,c,\bar u)$ is a convex polytope, and its image under the coordinate map $v\mapsto v_{\mathrm{DET}}$ is a convex subset of the line, hence an interval. It contains $0$, because the maintenance solution with $v_{\mathrm{ex,x}}=v_{\mathrm{DET}}=v_{\mathrm{ex,y}}=0$ is feasible exactly when $\Pi\ne\emptyset$. Its upper end is $V$ by definition. If $b\ge V$ the bound $b$ is not active; if $b<V$ then $b$ lies in the interval and is attained. $\square$</div>
-<p>This is what lets the demo replace a linear program at every time step by a table: the ceiling depends only on $(a,c)$, and the circuit enters through $\min\{b,V\}$.</p>
+<p>This is what lets the demo replace a linear program at every time step by a table: the network capacity depends only on $(a,c)$, and the circuit enters through $\min\{b,V\}$.</p>
 
 <h3>3.2 Closed forms</h3>
-<div class="prop"><strong>Proposition 1 (ceiling).</strong> Let $H=H(a)$, $g=g(a)$. For the NADPH using effector,
+<div class="prop"><strong>Proposition 1 (network capacity).</strong> Let $H=H(a)$, $g=g(a)$. For the NADPH using effector,
 $$V(a,c)=2\min\{\,g,\ H,\ 3(2H-m_A-c)\,\}-m_N,\qquad \text{feasible}\Longleftrightarrow c\le c_{\max}(a)=2H(a)-m_A-\tfrac16 m_N .$$ @@Vclosed
 For the ATP using effector,
 $$V^{\mathrm{ATP}}(a,c)=2H(a)-\tfrac16 m_N-m_A-c,\qquad \text{feasible}\Longleftrightarrow c\le c_{\max}(a).$$ @@VATP</div>
 <div class="proof"><em>Proof (NADPH effector).</em> By @@reduced, $v_{\mathrm{DET}}=2p-v_{\mathrm{GSH}}\le 2p-m_N$, so $V$ is largest for the largest feasible $p$. The constraints on $p$ are $p\le g$ (G6PD capacity), $p\le f\le H$ (the PPP is fed by hexokinase), and the ATP balance $2f-\tfrac13p\ge m_A+c$. The left side increases with $f$, so take $f=H$; the ATP balance becomes $p\le 3(2H-m_A-c)$. Hence $p\le\bar p:=\min\{g,H,3(2H-m_A-c)\}$ and $V=2\bar p-m_N$. Feasibility needs $\bar p\ge m_N/2$ (so that $v_{\mathrm{GSH}}\ge m_N$ is possible); the binding term is the third, which gives $c\le 2H-m_A-m_N/6$. <em>ATP effector.</em> Now $v_{\mathrm{GSH}}=2p\ge m_N$, so the smallest $p=m_N/2$ is best, and the ATP balance gives $v_{\mathrm{DET}}=2H-\tfrac13p-m_A-c$ with $p=m_N/2$. $\square$</div>
-<p>In the demo's parameters the first branch of the minimum, $g(a)$, is the active one for every age from 0 to 120 d when $c=0$ (the mature stage), and at age 0 for every cost up to ${{cflat}}$, which is $2H-m_A-g_0/3$ (the expression stage). There $V=2g(a)-m_N$, which is ${{Vyoung}}$ for a young cell, and the ceiling of the ATP effector is ${{VATPyoung}}$ at age 0. Table interpolation in the code is exact up to the kinks of this piecewise linear function.</p>
+<p>In the demo's parameters the first branch of the minimum, $g(a)$, is the active one for every age from 0 to 120 d when $c=0$ (the mature stage), and at age 0 for every cost up to ${{cflat}}$, which is $2H-m_A-g_0/3$ (the expression stage). There $V=2g(a)-m_N$, which is ${{Vyoung}}$ for a young cell, and the network capacity for the ATP effector is ${{VATPyoung}}$ at age 0. Table interpolation in the code is exact up to the kinks of this piecewise linear function.</p>
 
 <h3>3.3 Marginal values (what one more unit of a resource buys)</h3>
-<p>The marginal value of a model parameter $\vartheta$ is the derivative of the ceiling, evaluated in the demo by a forward difference $[V(\vartheta+\epsilon)-V(\vartheta)]/\epsilon$ with $\epsilon=10^{-3}$. From Proposition 1 the exact values in each regime are</p>
+<p>The marginal value of a model parameter $\vartheta$ is the derivative of the network capacity, evaluated in the demo by a forward difference $[V(\vartheta+\epsilon)-V(\vartheta)]/\epsilon$ with $\epsilon=10^{-3}$. From Proposition 1 the exact values in each regime are</p>
 <table>
 <tr><th>Effector and active term</th><th>$\partial V/\partial g$</th><th>$\partial V/\partial H$</th><th>$\partial V/\partial m_A$</th><th>$\partial V/\partial m_N$</th><th>$\partial V/\partial c$</th></tr>
 <tr><td>NADPH, $\bar p=g$ (the demo)</td><td>$2$</td><td>$0$</td><td>$0$</td><td>$-1$</td><td>$0$</td></tr>
@@ -380,10 +380,10 @@ $$v_{\mathrm{PPP}}-\bar\phi\,v_{\mathrm{HK}}\le 0,\qquad -v_{\mathrm{PPP}}+\unde
 $$[t_{\mathrm{lo}},t_{\mathrm{hi}}]=\left[\max_{i:\,d_i\ne0}\min\!\left\{\tfrac{\ell_i-x_i}{d_i},\tfrac{u_i-x_i}{d_i}\right\},\ \min_{i:\,d_i\ne0}\max\!\left\{\tfrac{\ell_i-x_i}{d_i},\tfrac{u_i-x_i}{d_i}\right\}\right]\ \cap\ \{t:\ A(x+td)\le 0\}.$$ @@hitrun
 <p>The chain has the uniform distribution on $\Omega$ as its stationary law, so it describes the feasible flux states without choosing an objective. The starting point is the mean of random vertices (an interior point), with 500 burn in steps and a thinning of 20. Flux variability analysis is the companion problem $\min/\max\,v_j$ over $\Omega$.</p>
 
-<h3>4.3 Enzyme activity and the predicted ceiling</h3>
+<h3>4.3 Enzyme activity and the predicted network capacity</h3>
 <p>Activities relative to young cells follow $\log_2A_{ij}=\beta_0+\beta_1a_i+e_{ij}$. Least squares gives</p>
 $$\hat\beta=(X^\top X)^{-1}X^\top y,\qquad \hat\Sigma=s^2(X^\top X)^{-1},\qquad \hat\tau=-1/\hat\beta_1 .$$ @@regression
-<p>Draws $\beta^{(s)}\sim\mathrm{N}(\hat\beta,\hat\Sigma)$ give capacity curves $g^{(s)}(a)=g_02^{\beta^{(s)}_0+\beta^{(s)}_1a}$ and, through Proposition 1, ceiling curves $V\left(g^{(s)}(a),a\right)$ whose 2.5th and 97.5th percentiles form the band in the demo. Without the enzyme assay the same band is computed from a prior on $(g_0,\tau_G)$ that is log uniform on $[0.15,1]\times[20,200]$ d and conditioned on $g(120)\ge m_N/2$ (capacity must cover the basal redox need).</p>
+<p>Draws $\beta^{(s)}\sim\mathrm{N}(\hat\beta,\hat\Sigma)$ give G6PD capacity curves $g^{(s)}(a)=g_02^{\beta^{(s)}_0+\beta^{(s)}_1a}$ and, through Proposition 1, network capacity curves $V\left(g^{(s)}(a),a\right)$ whose 2.5th and 97.5th percentiles form the band in the demo. Without the enzyme assay the same band is computed from a prior on $(g_0,\tau_G)$ that is log uniform on $[0.15,1]\times[20,200]$ d and conditioned on $g(120)\ge m_N/2$ (capacity must cover the basal redox need).</p>
 
 <h2>5. The circuit model</h2>
 <p>With the stage indicator $\chi(t)=1$ for $t<T_{\mathrm{exp}}$ and $0$ afterwards, and $h(u;K)=u^2/(K^2+u^2)$:</p>
@@ -407,7 +407,7 @@ $$v_n\leftarrow\min\left\{v_n,\ \max\{X_n/\Delta t+L-k_cX_n,\,0\}\right\},\qquad
 <p>$R$ and $E$ are advanced with the same step. The demo solves the linear program at every step for the true design and uses a table of $V$ for the design search; Lemma 1 says the two are the same map, and section 10 confirms it.</p>
 
 <h2>7. Quasi steady state of the mature stage</h2>
-<p>The toxin relaxes on a time scale of at most $1/k_c=50$ h, while the enzyme and the ceiling change over days to months. Setting $dX/dt=0$ at fixed age gives $L=\min\{\kappa(E,X),V\}+k_cX$. Both $F_\kappa(X)=\kappa+k_cX$ and $F_V(X)=V+k_cX$ are strictly increasing in $X$, so $\min\{F_\kappa,F_V\}=L$ has a unique root, and it is the larger of the two single roots.</p>
+<p>The toxin relaxes on a time scale of at most $1/k_c=50$ h, while the enzyme and the network capacity change over days to months. Setting $dX/dt=0$ at fixed age gives $L=\min\{\kappa(E,X),V\}+k_cX$. Both $F_\kappa(X)=\kappa+k_cX$ and $F_V(X)=V+k_cX$ are strictly increasing in $X$, so $\min\{F_\kappa,F_V\}=L$ has a unique root, and it is the larger of the two single roots.</p>
 <div class="prop"><strong>Proposition 2 (quasi steady state).</strong>
 $$X_{\mathrm{qs}}(a)=\max\{\,X_\kappa(a),\ X_V(a)\,\},\qquad X_V=\frac{L-V(a)}{k_c},\qquad X_\kappa=\frac{B+\sqrt{B^2+4k_cLK_m}}{2k_c},\quad B=L-k_cK_m-kE(a).$$ @@qss
 Consequently the toxin is at or below target if and only if the enzyme and the network can each deliver the needed flux at the target level:
@@ -415,14 +415,14 @@ $$X_{\mathrm{qs}}\le\bar X\Longleftrightarrow \kappa(E,\bar X)\ge\eta\ \ \text{a
 <div class="proof"><em>Proof.</em> $X_\kappa$ solves $(L-k_cX)(K_m+X)=kEX$, that is $k_cX^2-BX-LK_m=0$, whose positive root is the formula. The equivalence follows from $\min\{F_\kappa,F_V\}(\bar X)\ge L$ and monotonicity. $\square$</div>
 <p>The first condition fails at $a_\kappa=h_E\log_2\dfrac{E_0\,k\,\bar X}{\eta\,(K_m+\bar X)}={{a_kappa}}$ d, the second at $a_\eta={{a_nu}}$ d, so the toxin is lost at $a_{\mathrm{tox}}=\min\{a_\kappa,a_\eta\}={{a_tox}}$ d. The network, not the enzyme, is the first to fail. The simulation gives ${{sim_tox}}$ d on daily records. The reserve in the quasi steady state is $\Lambda=1+\left(V-(L-k_cX_{\mathrm{qs}})\right)/m_N$, which crosses $\rho$ at ${{a_res}}$ d (simulation: ${{sim_res}}$ d).</p>
 
-<h2>8. A ceiling on every design</h2>
+<h2>8. An upper bound on every design</h2>
 <p>A design is <em>protected</em> at age $a$ if the toxin is at target and the redox reserve is intact. The protected fraction of the 120 days of mature life is</p>
 $$P(\theta)=\frac1{120}\sum_{a=0}^{119}\mathbf 1\left[\,X(a)\le\bar X\ \text{ and }\ \Lambda(a)\ge\rho\,\right].$$ @@protected
-<div class="prop"><strong>Proposition 3 (ceiling on design performance).</strong> In the quasi steady state, protection at age $a$ implies $V(a)\ge\Theta$. Hence for every design $\theta$
-$$P(\theta)\ \le\ \bar P=\frac1{120}\left|\,\{a\in\{0,\dots,119\}:\ V(a)\ge\Theta\}\,\right|,$$ @@ceilingP
+<div class="prop"><strong>Proposition 3 (upper bound on design performance).</strong> In the quasi steady state, protection at age $a$ implies $V(a)\ge\Theta$. Hence for every design $\theta$
+$$P(\theta)\ \le\ \bar P=\frac1{120}\left|\,\{a\in\{0,\dots,119\}:\ V(a)\ge\Theta\}\,\right|,$$ @@boundP
 and $\bar P$ depends only on the network and the G6PD decline, not on the circuit.</div>
 <div class="proof"><em>Proof.</em> Protection gives $X_{\mathrm{qs}}\le\bar X$, so the delivered flux is $v=L-k_cX_{\mathrm{qs}}\ge L-k_c\bar X=\eta$. The reserve condition $1+(V-v)/m_N\ge\rho$ then gives $V\ge v+(\rho-1)m_N\ge\eta+(\rho-1)m_N=\Theta$. $\square$</div>
-<p>With $V=2g-m_N$ the set $\{a:V(a)\ge\Theta\}$ is $\{0,\dots,\lfloor a^\ast\rfloor\}$, so $\bar P=(\lfloor a^\ast\rfloor+1)/120$ with $a^\ast=\tau_G\log_2\!\left(2g_0/(\Theta+m_N)\right)$. For $\tau_G=40,\,62,\,90$ d this gives ${{ceil40}}$, ${{ceil62}}$ and ${{ceil90}}$. These are exactly the values the demo computes from its table of the ceiling, and the best of {{Nd}} designs in each scenario is within one day of them (a transient can overshoot the quasi steady state by a day).</p>
+<p>With $V=2g-m_N$ the set $\{a:V(a)\ge\Theta\}$ is $\{0,\dots,\lfloor a^\ast\rfloor\}$, so $\bar P=(\lfloor a^\ast\rfloor+1)/120$ with $a^\ast=\tau_G\log_2\!\left(2g_0/(\Theta+m_N)\right)$. For $\tau_G=40,\,62,\,90$ d this gives ${{bound40}}$, ${{bound62}}$ and ${{bound90}}$. These are exactly the values the demo computes from its table of the network capacity, and the best of {{Nd}} designs in each scenario is within one day of them (a transient can overshoot the quasi steady state by a day).</p>
 
 <h2>9. Design ensemble, inference and identifiability</h2>
 <p><strong>Ensemble.</strong> The design vector $\theta=(a_E,k,K_X,h_E)$ is drawn from a scrambled Sobol sequence, log uniform on $a_E\in[0.004,0.25]$, $k\in[0.2,5]$, $K_X\in[0.5,8]$, $h_E\in[30,400]$ d ({{Nd}} points). The robust score is the worst case over three G6PD half lives, $P_{\mathrm{rob}}(\theta)=\min_{\tau_G\in\{40,62,90\}}P_{\tau_G}(\theta)$. Designs with $c(t)>c_{\max}$ at any time score $0$.</p>
@@ -441,7 +441,7 @@ $$d(\theta)=\left[\tfrac1n\sum_{j=1}^n\left(\ln X_j(\theta)-\bar y_j\right)^2\ri
 <table>
 <tr><th>Equation</th><th>In <code>coupling_demo.py</code></th></tr>
 <tr><td>Network @@balance, bounds @@polytope</td><td><code>build_reactions</code>, <code>ToyGEM.bounds</code></td></tr>
-<tr><td>Ceiling and delivered flux @@ceiling, @@lemma</td><td><code>max_flux</code>, <code>metabolic_max</code>; the table <code>tabB_for</code>, <code>V2D</code></td></tr>
+<tr><td>Network capacity and delivered flux @@capacity, @@lemma</td><td><code>max_flux</code>, <code>metabolic_max</code>; the table <code>tabB_for</code>, <code>V2D</code></td></tr>
 <tr><td>Marginal values (3.3)</td><td><code>marginal_values</code></td></tr>
 <tr><td>Redox reserve @@reserve</td><td><code>oxidative_reserve</code>; <code>protected_fraction</code> uses the closed form</td></tr>
 <tr><td>Window @@window and closing age @@closing</td><td>operating window block; <code>window_closing_age</code></td></tr>
@@ -450,12 +450,12 @@ $$d(\theta)=\left[\tfrac1n\sum_{j=1}^n\left(\ln X_j(\theta)-\bar y_j\right)^2\ri
 <tr><td>Circuit @@ode, @@costkappa and coupling @@fluxmap, @@euler</td><td><code>run_coupled_lp</code> (linear program each step), <code>simulate_table</code> (table, many designs)</td></tr>
 <tr><td>Ensemble and inference @@protected, @@abc</td><td>design ensemble block (<code>qmc.Sobol</code>), <code>protected_fraction</code></td></tr>
 </table>
-<p>The closed forms, the quasi steady state and the two ceilings are derived here and are not in the code; the code computes the same quantities numerically, and section 10 shows that they agree.</p>
+<p>The closed forms, the quasi steady state, the network capacity and the bound on design performance are derived here and are not in the code; the code computes the same quantities numerically, and section 10 shows that they agree.</p>
 
 <h2>12. What is exact and what is approximate</h2>
 <ul>
 <li><strong>Exact for this toy model:</strong> Lemma 1; Proposition 1 and its marginal values; the reserve formula; the window and its closing ages; Proposition 4.</li>
-<li><strong>Exact under the quasi steady state:</strong> Proposition 2 and the ceiling of Proposition 3. The check in section 10 measures the error (a few percent near the transition, where the toxin level moves faster than the enzyme and the ceiling).</li>
+<li><strong>Exact under the quasi steady state:</strong> Proposition 2 and the bound of Proposition 3. The check in section 10 measures the error (a few percent near the transition, where the toxin level moves faster than the enzyme and the network capacity).</li>
 <li><strong>Numerical:</strong> forward Euler with $\Delta t=0.5$ h (changes the toxin level by less than 2% against $\Delta t=0.125$ h); hit and run sampling; rejection sampling for inference, which is not a full Bayesian posterior.</li>
 <li><strong>Assumptions:</strong> the network is in steady state at every instant (so no cofactor ratios); the expression stage reuses the mature cell network; the data are generated by the same model that is fitted, so identifiability results are best cases.</li>
 </ul>

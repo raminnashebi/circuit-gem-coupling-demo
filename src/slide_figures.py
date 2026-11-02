@@ -90,10 +90,10 @@ save(fig, "step1_limits.png")
 # Step 2: a safe operating window that closes with age
 w = R["level1_window"]
 ser = w["series"]
-age, ceil, upper = np.array(ser["age_d"]), np.array(ser["ceiling"]), np.array(ser["upper_safe"])
+age, cap, upper = np.array(ser["age_d"]), np.array(ser["network_capacity"]), np.array(ser["upper_safe"])
 close = w["closing_age_days"]
 top = 0.75
-end = crossing(age, ceil, NEED)  # after this age no enzyme level reaches the need
+end = crossing(age, cap, NEED)  # after this age no enzyme level reaches the need
 fig, ax = plt.subplots(figsize=SIZE)
 tidy(ax)
 ax.grid(False)
@@ -103,14 +103,14 @@ ax.fill_between(a, 0, NEED, color=GREY_T, lw=0)
 ax.fill_between(a, NEED, u, color=TEAL_T, lw=0)
 ax.fill_between(a, u, top, color=CRIMSON_T, lw=0)
 ax.axvspan(end, 120, color=GREY_T, lw=0)
-ax.plot(age, ceil, color=INK, lw=2)
+ax.plot(age, cap, color=INK, lw=2)
 ax.axvline(close, color=CRIMSON, ls=":", lw=2)
 ax.text(close + 1.5, 0.56, f"window closes\nat about day {close:.0f}", color=CRIMSON, fontsize=14, va="top",
         fontweight="bold")
 ax.text(4, 0.255, "safe operating\nwindow", color=TEAL, fontsize=18, fontweight="bold", va="center")
 ax.text(3, 0.70, "too much: the reserve runs low", color=CRIMSON, fontsize=13.5)
 ax.text(4, 0.05, "too little: the toxin is not cleared", color=INK, fontsize=13.5)
-ax.annotate("most the network can supply", (90, float(np.interp(90, age, ceil))), xytext=(78, 0.42), fontsize=13,
+ax.annotate("most the network can supply", (90, float(np.interp(90, age, cap))), xytext=(78, 0.42), fontsize=13,
             color=INK, arrowprops=dict(arrowstyle="-", color=INK, lw=0.9))
 ax.set_xlim(0, 120)
 ax.set_ylim(0, top)

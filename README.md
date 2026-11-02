@@ -43,7 +43,7 @@ flux it can really deliver, given the cofactors (ATP, NADPH) its own maintenance
 
 | | Result |
 |---|---|
-| Ceiling | The network sets a hard limit on what any circuit design can achieve; for the NADPH effector it falls as G6PD declines with cell age. |
+| Network capacity | The network's capacity is an upper bound on what any circuit design can achieve; for the NADPH effector it falls as G6PD declines with cell age. |
 | Safe window | The range of enzyme levels that is both effective and safe narrows with age and closes at about day 58. |
 | Coupling in time | The toxin stays under its target until about day 110, but the cell's spare redox capacity falls below its minimum at about day 52. Judged by circuit output alone the design looks successful; only the coupled model shows the host's safety margin is gone. |
 | Identifiability | The toxin data fix the product of expression strength and kcat (narrowed by 94%), not each alone (26% and 4%). The enzyme amount at the end of expression separates them. The prediction that matters barely changes across the 76 designs the data allow. |

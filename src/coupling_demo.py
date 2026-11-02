@@ -310,8 +310,8 @@ def run_coupled_lp(m, theta, t_g=HALF_LIFE["G6PD"]):
 
 def simulate_table(theta, tabA, tabB, dt=DT, n_steps=None):
     """Same dynamics for many designs at once, using tabulated exact LP results:
-    delivered flux = min(enzyme bound, metabolic ceiling), which is exact because the set of
-    feasible DETOX fluxes is an interval [0, ceiling]."""
+    delivered flux = min(enzyme bound, network capacity), which is exact because the set of
+    feasible DETOX fluxes is an interval [0, network capacity]."""
     c = CIRC
     a_E, kcat, K_X, hl = (np.atleast_1d(theta[k]).astype(float) for k in ("a_E", "kcat", "K_X", "hl"))
     N = max(len(a_E), len(kcat), len(K_X), len(hl))
@@ -393,7 +393,7 @@ for label, mod in (("NADPH", m), ("ATP", mA)):
     for a in ages_tab:
         p = caps_at(a)
         vmax, mv = marginal_values(mod, p)
-        L1[label][a] = {"ceiling": vmax, "marginal": mv,
+        L1[label][a] = {"network_capacity": vmax, "marginal": mv,
                         "limiting": [k for k, val in sorted(mv.items(), key=lambda kv: -kv[1]) if val > 1e-3]}
 RESULTS["level1_capacity"] = {lab: {str(a): d for a, d in dd.items()} for lab, dd in L1.items()}
 
@@ -403,7 +403,7 @@ fig, axs = plt.subplots(1, 2, figsize=(9.6, 3.6), sharey=True)
 cols = {0: TEAL, 60: "#E39A2D", 120: RED}
 for ax, (label, mod, title) in zip(axs, (("NADPH", m, "Effector that uses NADPH"), ("ATP", mA, "Effector that uses ATP"))):
     for a in ages_tab:
-        V = L1[label][a]["ceiling"]
+        V = L1[label][a]["network_capacity"]
         ax.plot(kgrid, np.minimum(kgrid, V), color=cols[a], lw=2.2, label=f"cell age {a} d")
         ax.plot(kgrid[kgrid >= V][:1], [V], "o", color=cols[a], ms=4.5)
     top = L1[label][0]["limiting"][0].split(" (")[0]
@@ -450,8 +450,8 @@ grid_edge = np.array([k_w[cat[:, j] == 1].max() if (cat[:, j] == 1).any() else n
 ok = np.isfinite(grid_edge)
 RESULTS["checks"]["window_edge_grid_vs_formula_max_abs_diff"] = float(np.abs(grid_edge[ok] - upper_safe[ok]).max())
 RESULTS["level1_window"] = {"need_flux": NEED, "reserve_min_fold": RESERVE_MIN, "closing_age_days": close_age,
-                            "ceiling_at_age": dict(zip([int(a) for a in ages_w[::6]], [float(x) for x in Vw[::6]])),
-                            "series": {"age_d": [float(a) for a in ages_w], "ceiling": [float(x) for x in Vw],
+                            "network_capacity_at_age": dict(zip([int(a) for a in ages_w[::6]], [float(x) for x in Vw[::6]])),
+                            "series": {"age_d": [float(a) for a in ages_w], "network_capacity": [float(x) for x in Vw],
                                        "upper_safe": [float(x) for x in upper_safe]}}
 RESULTS["level1_capacity_series"] = {"age_d": [float(a) for a in ages_w],
                                      "NADPH": [float(marginal_values(m, caps_at(a))[0]) for a in ages_w],
@@ -465,7 +465,7 @@ ax.text(close_age + 1.5, 0.77, f"window closes\nat about {close_age:.0f} days", 
 ax.text(3, 0.06, "too little detox", fontsize=9, color=INK)
 ax.text(3, 0.30, "operating window", fontsize=9, color=TEAL, fontweight="bold")
 ax.text(3, 0.735, "too much: little redox reserve left", fontsize=9, color=RED)
-ax.annotate("metabolic ceiling", xy=(88, float(np.interp(88, ages_w, Vw))), xytext=(86, 0.47), fontsize=8.5, color=INK,
+ax.annotate("network capacity", xy=(88, float(np.interp(88, ages_w, Vw))), xytext=(86, 0.47), fontsize=8.5, color=INK,
             arrowprops=dict(arrowstyle="-", color=INK, lw=0.8), ha="left")
 ax.set_xlabel("cell age (days)")
 ax.set_ylabel("flux the enzyme could carry (kcat × E)")
@@ -552,8 +552,8 @@ RESULTS["sampling"] = {
     "between_chain_mean_diff_over_sd": float(abs(ppp_frac(smp_ex).mean() - ppp_frac(smp_ex2).mean()) / ppp_frac(smp_ex).std()),
 }
 
-# Predicted DETOX ceiling by cell age: knowledge from exchange and tracer data only, versus plus enzyme activity
-log("tabulating exact LP ceiling over (G6PD capacity, cell age)")
+# Predicted network capacity for DETOX by cell age: knowledge from exchange and tracer data only, versus plus enzyme activity
+log("tabulating exact LP network capacity over (G6PD capacity, cell age)")
 ppp_axis = np.linspace(0.03, 1.2, 48)
 age_axis = np.linspace(0, 120, 41)
 Vgrid = np.array([[metabolic_max(m, ppp_cap=pc, hk_cap=caps_at(a)["hk_cap"]) for a in age_axis] for pc in ppp_axis])
@@ -561,24 +561,24 @@ V2D = RegularGridInterpolator((ppp_axis, age_axis), Vgrid, bounds_error=False, f
 age_fine = np.linspace(0, 125, 501)
 
 
-def ceiling_curve(t_g=None, ppp0=None):
+def capacity_curve(t_g=None, ppp0=None):
     ppp = ppp0 * 2.0 ** (-age_fine / t_g)
     return V2D(np.column_stack([np.clip(ppp, ppp_axis[0], ppp_axis[-1]), np.clip(age_fine, 0, 120)]))
 
 
-truth_curve = ceiling_curve(HALF_LIFE["G6PD"], BASE["ppp_cap"])
+truth_curve = capacity_curve(HALF_LIFE["G6PD"], BASE["ppp_cap"])
 # prior (exchange and tracer data only): capacity must at least cover the basal flux at every age
 basal = BASE["m_nadph"] / 2
 pri = []
 while len(pri) < 400:
     p0, tg = 10 ** rng.uniform(np.log10(0.15), np.log10(1.0)), 10 ** rng.uniform(np.log10(20), np.log10(200))
     if p0 * 2.0 ** (-120 / tg) >= basal:
-        pri.append(ceiling_curve(tg, p0))
+        pri.append(capacity_curve(tg, p0))
 pri = np.array(pri)
 post = []
 for b in rng.multivariate_normal(fitG, covG, size=400):
     p0, tg = 2.0 ** b[0] * BASE["ppp_cap"], -1 / b[1]
-    post.append(ceiling_curve(tg, p0))
+    post.append(capacity_curve(tg, p0))
 post = np.array(post)
 band = lambda A: (np.nanpercentile(A, 2.5, axis=0), np.nanpercentile(A, 97.5, axis=0))
 idx60 = np.argmin(abs(age_fine - 60))
@@ -617,12 +617,12 @@ lo, hi = band(pri)
 ax.fill_between(age_fine, lo, hi, color=GREY_L, ec="#B9C0CA", lw=0.6, label="exchange and tracer data only")
 lo, hi = band(post)
 ax.fill_between(age_fine, lo, hi, color=TEAL, alpha=0.6, label="plus enzyme activity assay")
-ax.plot(age_fine, truth_curve, color=RED, lw=1.5, label="true ceiling")
+ax.plot(age_fine, truth_curve, color=RED, lw=1.5, label="true capacity")
 ax.axhline(NEED, color=GREY, ls="--", lw=1)
 ax.set_xlim(0, 120)
 ax.set_ylim(0, 0.8)
 ax.set_xlabel("cell age (days)")
-ax.set_ylabel("predicted DETOX ceiling")
+ax.set_ylabel("predicted network capacity")
 ax.set_title("What each dataset tells us")
 ax.legend(fontsize=8, loc="upper right")
 fig.tight_layout()
@@ -686,7 +686,7 @@ axr[0].set_title("mature cell: no new protein", fontsize=9)
 both(0, run["R"], color="#7E5BA8", lw=1.8)
 axl[0].set_ylabel("regulator R")
 both(1, TRUE_THETA["kcat"] * run["E"], color=TEAL, ls="--", lw=1.6, label="enzyme bound (kcat × E)")
-both(1, run["vmet"], color=INK, lw=1.8, label="ceiling set by the network")
+both(1, run["vmet"], color=INK, lw=1.8, label="network capacity")
 both(1, run["v"], color=TEAL, lw=2.4, label="flux delivered")
 for ax in (axl[1], axr[1]):
     ax.axhline(NEED, color=GREY, ls=":", lw=1.2)
@@ -752,7 +752,7 @@ _daily = np.isclose(run["t_d"] % 1.0, 0.0)
 _xa, _xb = run["X"][_daily], sim_tab["X"][0, np.round(run["t_d"][_daily]).astype(int)]
 RESULTS["checks"]["lp_run_vs_table_run_max_rel_diff_X"] = float(np.max(np.abs(_xa - _xb) / _xb))
 RESULTS["checks"]["dt_0.5_vs_0.125_max_rel_diff_X"] = float(np.max(np.abs(sim_tab["X"][0, :-1] - sim_fine["X"][0, :-1]) / sim_fine["X"][0, :-1]))
-# redox reserve from the closed form 1 + (ceiling - v)/m against the LP value
+# redox reserve from the closed form 1 + (capacity - v)/m against the LP value
 reserve_cf = 1 + (run["vmet"] - run["v"]) / BASE["m_nadph"]
 RESULTS["checks"]["reserve_closed_form_vs_lp_max_abs_diff"] = float(np.nanmax(np.abs(reserve_cf - run["reserve"])))
 log("checks: " + json.dumps({k: (round(v, 6) if isinstance(v, float) else v) for k, v in RESULTS["checks"].items()}))
@@ -774,7 +774,7 @@ RESULTS["ensemble"] = {
     "n_designs": int(len(robust)),
     "designs_failing_from_expression_cost": float(np.mean(sims["baseline (62 d)"]["crisis"])),
     "best_protected_fraction_per_scenario": {n: float(p[0].max()) for n, p in prot.items()},
-    "metabolic_ceiling_protected_fraction": {n: float(np.mean(
+    "network_bound_protected_fraction": {n: float(np.mean(
         np.interp(daily_age, *tabB_for(tg)) >= NEED + (RESERVE_MIN - 1) * BASE["m_nadph"])) for n, tg in SCEN.items()},
     "robust_best": float(robust.max()), "robust_median": float(np.median(robust)),
     "fraction_of_designs_within_5pct_of_best_robust": float(np.mean(robust >= 0.95 * robust.max())),

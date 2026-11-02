@@ -135,7 +135,7 @@
  "level1_capacity": {
   "NADPH": {
    "0": {
-    "ceiling": 0.68,
+    "network_capacity": 0.68,
     "marginal": {
      "G6PD capacity (PPP)": 2.0000000000000018,
      "hexokinase capacity": 0.0,
@@ -149,7 +149,7 @@
     ]
    },
    "60": {
-    "ceiling": 0.28904457424050733,
+    "network_capacity": 0.28904457424050733,
     "marginal": {
      "G6PD capacity (PPP)": 2.0000000000000018,
      "hexokinase capacity": 0.0,
@@ -163,7 +163,7 @@
     ]
    },
    "120": {
-    "ceiling": 0.08914682964449744,
+    "network_capacity": 0.08914682964449744,
     "marginal": {
      "G6PD capacity (PPP)": 2.0000000000000018,
      "hexokinase capacity": 0.0,
@@ -179,7 +179,7 @@
   },
   "ATP": {
    "0": {
-    "ceiling": 1.1799999999999997,
+    "network_capacity": 1.1799999999999997,
     "marginal": {
      "G6PD capacity (PPP)": 0.0,
      "hexokinase capacity": 1.9999999999997797,
@@ -194,7 +194,7 @@
     ]
    },
    "60": {
-    "ceiling": 0.4995079107728939,
+    "network_capacity": 0.4995079107728939,
     "marginal": {
      "G6PD capacity (PPP)": 0.0,
      "hexokinase capacity": 2.000000000000224,
@@ -209,7 +209,7 @@
     ]
    },
    "120": {
-    "ceiling": 0.05055056329612401,
+    "network_capacity": 0.05055056329612401,
     "marginal": {
      "G6PD capacity (PPP)": 0.0,
      "hexokinase capacity": 1.9999999999998908,
@@ -229,7 +229,7 @@
   "need_flux": 0.12000000000000001,
   "reserve_min_fold": 2.5,
   "closing_age_days": 57.63586170505732,
-  "ceiling_at_age": {
+  "network_capacity_at_age": {
    "0": 0.68,
    "12": 0.5795618488477988,
    "24": 0.4917334754541882,
@@ -306,7 +306,7 @@
     118.0,
     120.0
    ],
-   "ceiling": [
+   "network_capacity": [
     0.68,
     0.6623108290683463,
     0.645012791597004,
@@ -672,7 +672,7 @@
   ],
   "truth_inside_post_band_fraction": 1.0
  },
- "level2_timing_s": 1.3655452728271484,
+ "level2_timing_s": 1.3543469905853271,
  "level2_truth_design": {
   "theta": {
    "a_E": 0.02,
@@ -697,7 +697,7 @@
    "baseline (62 d)": 0.49166666666666664,
    "slow decline (90 d)": 0.7083333333333334
   },
-  "metabolic_ceiling_protected_fraction": {
+  "network_bound_protected_fraction": {
    "fast G6PD decline (half-life 40 d)": 0.31666666666666665,
    "baseline (62 d)": 0.48333333333333334,
    "slow decline (90 d)": 0.7

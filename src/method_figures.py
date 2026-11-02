@@ -127,7 +127,7 @@ note(ax, 8.58, 2.80, "gene rule", color=CRIMSON, size=12.5, ha="center")
 badge(ax, 9.30, 3.85, 1)
 note(ax, 9.62, 3.85, "add the circuit: reactions,\ngene rule, flux bound", size=13.5)
 badge(ax, 3.08, 2.42, 2)
-note(ax, 3.38, 2.42, "linear programming: the ceiling\non v, and the enzyme that limits it", size=13)
+note(ax, 3.38, 2.42, "linear programming: the capacity\nfor v, and the enzyme that limits it", size=13)
 badge(ax, 0.55, 2.40, 3)
 note(ax, 0.55, 1.97, "data become\nbounds", size=13.5, ha="center")
 for xy in ((1.62, 2.98), (1.62, 1.30)):

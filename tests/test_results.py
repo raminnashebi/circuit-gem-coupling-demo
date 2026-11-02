@@ -29,9 +29,9 @@ def test_time_step_has_converged():
     assert C["dt_0.5_vs_0.125_max_rel_diff_X"] < 0.05
 
 
-def test_ceiling_and_its_limiting_resource():
+def test_capacity_and_its_limiting_resource():
     nadph = R["level1_capacity"]["NADPH"]["0"]
-    assert nadph["ceiling"] == pytest.approx(0.68, abs=1e-6)
+    assert nadph["network_capacity"] == pytest.approx(0.68, abs=1e-6)
     assert nadph["marginal"]["G6PD capacity (PPP)"] == pytest.approx(2.0, abs=1e-6)
 
 
@@ -73,7 +73,7 @@ def test_slide_series_agree_with_the_tables():
     s = R["level1_capacity_series"]
     for key in ("NADPH", "ATP"):
         for i, age in ((0, "0"), (30, "60"), (60, "120")):
-            assert s[key][i] == pytest.approx(R["level1_capacity"][key][age]["ceiling"], abs=1e-6)
+            assert s[key][i] == pytest.approx(R["level1_capacity"][key][age]["network_capacity"], abs=1e-6)
     assert len(R["identifiability"]["accepted_log10"]["a_E"]) == R["identifiability"]["n_accepted"]
 
 
